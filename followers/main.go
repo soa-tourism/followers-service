@@ -64,6 +64,9 @@ func main() {
 	getFollowing := router.Methods(http.MethodGet).Subrouter()
 	getFollowing.HandleFunc("/profiles/following/{userId}", handler.GetAllFollowing)
 
+	getRecommended := router.Methods(http.MethodGet).Subrouter()
+	getRecommended.HandleFunc("/profiles/recommend/{userId}", handler.GetFollowRecommendations)
+
 	follow := router.Methods(http.MethodPost).Subrouter()
 	follow.HandleFunc("/profiles/follow/{userId}/{followerId}", handler.Follow)
 

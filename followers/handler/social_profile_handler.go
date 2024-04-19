@@ -4,6 +4,7 @@ import (
 	"context"
 	"followers/model"
 	"followers/repo"
+	"followers/service"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,12 +17,13 @@ type KeyProduct struct{}
 type SocialProfileHandler struct {
 	logger *log.Logger
 	// NoSQL: injecting social profile repository
-	repo *repo.SocialProfileRepo
+	repo                  *repo.SocialProfileRepo
+	recommendationService *service.RecommendationService
 }
 
 // Injecting the logger makes this code much more testable.
 func NewSocialProfileHandler(l *log.Logger, r *repo.SocialProfileRepo) *SocialProfileHandler {
-	return &SocialProfileHandler{l, r}
+	return &SocialProfileHandler{l, r, service.NewRecommendationService(r)}
 }
 
 // Social Profile Handler Features
