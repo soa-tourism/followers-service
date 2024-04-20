@@ -26,6 +26,26 @@ func NewSocialProfileHandler(l *log.Logger, r *repo.SocialProfileRepo) *SocialPr
 	return &SocialProfileHandler{l, r, service.NewRecommendationService(r)}
 }
 
+func (m *SocialProfileHandler) GetFollowRecommendations(rw http.ResponseWriter, h *http.Request) {
+	vars := mux.Vars(h)
+	userId, err := strconv.ParseInt(vars["userId"], 10, 64)
+	if err != nil {
+		http.Error(rw, "Invalid userId", http.StatusBadRequest)
+		m.logger.Println("Invalid userId:", err)
+		return
+	}
+	profiles := m.recommendationService.GetRecommendedAccounts(userId)
+	if profiles == nil {
+		return
+	}
+	err = profiles.ToJSON(rw)
+	if err != nil {
+		http.Error(rw, "Unable to convert to json", http.StatusInternalServerError)
+		m.logger.Fatal("Unable to convert to json :", err)
+		return
+	}
+}
+
 // Social Profile Handler Features
 func (m *SocialProfileHandler) CreateSocialProfile(rw http.ResponseWriter, h *http.Request) {
 	socialProfile := h.Context().Value(KeyProduct{}).(*model.SocialProfile)
