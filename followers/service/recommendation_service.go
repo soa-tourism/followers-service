@@ -15,6 +15,7 @@ func NewRecommendationService(r *repo.SocialProfileRepo) *RecommendationService 
 
 func (service *RecommendationService) GetRecommendedAccounts(userId int64) model.SocialProfiles {
 	following, _ := service.repo.GetAllFollowing(userId)
+	already_following := following
 	recommended := make(model.SocialProfiles, 0)
 	for i := 0; i < len(following); i++ {
 		profile := following[i]
@@ -24,6 +25,15 @@ func (service *RecommendationService) GetRecommendedAccounts(userId int64) model
 			for k := 0; k < len(recommended); k++ {
 				if recommended[k].UserID == profile_following[j].UserID {
 					contains = true
+					break
+				}
+			}
+			if !contains {
+				for g := 0; g < len(already_following); g++ {
+					if already_following[g].UserID == profile_following[j].UserID {
+						contains = true
+						break
+					}
 				}
 			}
 			if !contains {
