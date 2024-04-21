@@ -129,7 +129,7 @@ func (mr *SocialProfileRepo) GetAllSocialProfiles(limit int) (model.SocialProfil
 	return profileResults.(model.SocialProfiles), nil
 }
 
-func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.SocialProfile, error) {
+func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.SocialProfileData, error) {
 	ctx := context.Background()
 	session := mr.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
 	defer session.Close(ctx)
@@ -139,8 +139,11 @@ func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.Soci
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			result, err := transaction.Run(ctx,
 				`MATCH (profile:SocialProfile {userId: $userId})
-				RETURN profile.userId as userId, profile.username as username
-				LIMIT 1`,
+                OPTIONAL MATCH (profile)<-[:FOLLOWS]-(follower:SocialProfile)
+                OPTIONAL MATCH (profile)-[:FOLLOWS]->(following:SocialProfile)
+                RETURN profile.userId as userId, profile.username as username,
+                collect(DISTINCT { userId: follower.userId, username: follower.username }) as followers,
+                collect(DISTINCT { userId: following.userId, username: following.username }) as following`,
 				map[string]any{"userId": userId})
 			if err != nil {
 				return nil, err
@@ -153,10 +156,42 @@ func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.Soci
 					return nil, nil
 				}
 				username, _ := record.Get("username")
-				return &model.SocialProfile{
-					UserID:   userID.(int64),
-					Username: username.(string),
-				}, nil
+
+				// Parse followers list
+				followersValue, ok := record.Get("followers")
+				var followers []*model.SocialProfile
+				if ok && followersValue != nil {
+					followersMapList := followersValue.([]interface{})
+					for _, followerMap := range followersMapList {
+						follower := &model.SocialProfile{
+							UserID:   followerMap.(map[string]interface{})["userId"].(int64),
+							Username: followerMap.(map[string]interface{})["username"].(string),
+						}
+						followers = append(followers, follower)
+					}
+				}
+
+				// Parse following list
+				followingValue, ok := record.Get("following")
+				var following []*model.SocialProfile
+				if ok && followingValue != nil {
+					followingMapList := followingValue.([]interface{})
+					for _, followingMap := range followingMapList {
+						followingUser := &model.SocialProfile{
+							UserID:   followingMap.(map[string]interface{})["userId"].(int64),
+							Username: followingMap.(map[string]interface{})["username"].(string),
+						}
+						following = append(following, followingUser)
+					}
+				}
+
+				socialProfile := &model.SocialProfileData{
+					UserID:    userID.(int64),
+					Username:  username.(string),
+					Followers: followers,
+					Following: following,
+				}
+				return socialProfile, nil
 			}
 
 			return nil, nil
@@ -170,7 +205,7 @@ func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.Soci
 		return nil, nil
 	}
 
-	return result.(*model.SocialProfile), nil
+	return result.(*model.SocialProfileData), nil
 }
 
 func (mr *SocialProfileRepo) GetAllFollowers(userId int64) (model.SocialProfiles, error) {

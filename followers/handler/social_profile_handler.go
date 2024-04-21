@@ -84,7 +84,7 @@ func (m *SocialProfileHandler) GetSocialProfileByUserId(rw http.ResponseWriter, 
 	}
 
 	// Convert the profile to a slice containing a single profile
-	socialProfile := model.SocialProfiles{profile}
+	socialProfile := model.SocialProfileDatas{profile}
 	err = socialProfile.ToJSON(rw)
 	if err != nil {
 		http.Error(rw, "Unable to convert to json", http.StatusInternalServerError)
