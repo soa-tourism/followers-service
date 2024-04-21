@@ -1,3 +1,7 @@
+// Delete all nodes and relationships
+MATCH (n)
+DETACH DELETE n;
+
 // Create SocialProfile nodes
 CREATE (a:SocialProfile {userId: -1, username: "admin"}),
        (a1:SocialProfile {userId: -11, username: "autor1"}),

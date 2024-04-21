@@ -161,6 +161,19 @@ func (m *SocialProfileHandler) Follow(rw http.ResponseWriter, h *http.Request) {
 		return
 	}
 
+	// Check if the follow relationship already exists
+	exists, err := m.repo.CheckFollowRelationshipExists(userId, followerId)
+	if err != nil {
+		http.Error(rw, "Error checking follow relationship", http.StatusInternalServerError)
+		m.logger.Println("Error checking follow relationship:", err)
+		return
+	}
+	if exists {
+		// Relationship already exists, return success
+		rw.WriteHeader(http.StatusOK)
+		return
+	}
+
 	err = m.repo.Follow(userId, followerId)
 	if err != nil {
 		m.logger.Println("Error following user:", err)

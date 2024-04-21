@@ -249,6 +249,28 @@ func (mr *SocialProfileRepo) GetAllFollowing(userId int64) (model.SocialProfiles
 	return followingResults.(model.SocialProfiles), nil
 }
 
+func (mr *SocialProfileRepo) CheckFollowRelationshipExists(userId int64, followerId int64) (bool, error) {
+	ctx := context.Background()
+	session := mr.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+
+	result, err := session.Run(ctx,
+		"MATCH (user:SocialProfile {userId: $userId})<-[:FOLLOWS]-(follower:SocialProfile {userId: $followerId}) "+
+			"RETURN COUNT(*)",
+		map[string]any{"userId": userId, "followerId": followerId})
+	if err != nil {
+		return false, err
+	}
+
+	if result.Next(ctx) {
+		record := result.Record()
+		countValue, _ := record.Get("COUNT(*)")
+		return countValue.(int64) > 0, nil
+	}
+
+	return false, nil
+}
+
 func (mr *SocialProfileRepo) Follow(userId int64, followerId int64) error {
 	ctx := context.Background()
 	session := mr.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})

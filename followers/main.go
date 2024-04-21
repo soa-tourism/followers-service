@@ -64,7 +64,7 @@ func main() {
 	getFollowing := router.Methods(http.MethodGet).Subrouter()
 	getFollowing.HandleFunc("/profiles/following/{userId}", handler.GetAllFollowing)
 
-	follow := router.Methods(http.MethodPost).Subrouter()
+	follow := router.Methods(http.MethodPut).Subrouter()
 	follow.HandleFunc("/profiles/follow/{userId}/{followerId}", handler.Follow)
 
 	unfollow := router.Methods(http.MethodDelete).Subrouter()
