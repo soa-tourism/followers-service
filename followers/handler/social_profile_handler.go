@@ -106,7 +106,7 @@ func (m *SocialProfileHandler) GetSocialProfileByUserId(rw http.ResponseWriter, 
 	}
 
 	// Convert the profile to a slice containing a single profile
-	socialProfile := model.SocialProfiles{profile}
+	socialProfile := model.SocialProfileDatas{profile}
 	err = socialProfile.ToJSON(rw)
 	if err != nil {
 		http.Error(rw, "Unable to convert to json", http.StatusInternalServerError)
@@ -180,6 +180,19 @@ func (m *SocialProfileHandler) Follow(rw http.ResponseWriter, h *http.Request) {
 	if err != nil {
 		http.Error(rw, "Invalid followerId", http.StatusBadRequest)
 		m.logger.Println("Invalid followerId:", err)
+		return
+	}
+
+	// Check if the follow relationship already exists
+	exists, err := m.repo.CheckFollowRelationshipExists(userId, followerId)
+	if err != nil {
+		http.Error(rw, "Error checking follow relationship", http.StatusInternalServerError)
+		m.logger.Println("Error checking follow relationship:", err)
+		return
+	}
+	if exists {
+		// Relationship already exists, return success
+		rw.WriteHeader(http.StatusOK)
 		return
 	}
 

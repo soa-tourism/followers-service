@@ -67,7 +67,7 @@ func main() {
 	getRecommended := router.Methods(http.MethodGet).Subrouter()
 	getRecommended.HandleFunc("/profiles/recommend/{userId}", handler.GetFollowRecommendations)
 
-	follow := router.Methods(http.MethodPost).Subrouter()
+	follow := router.Methods(http.MethodPut).Subrouter()
 	follow.HandleFunc("/profiles/follow/{userId}/{followerId}", handler.Follow)
 
 	unfollow := router.Methods(http.MethodDelete).Subrouter()
