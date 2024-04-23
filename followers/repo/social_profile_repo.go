@@ -67,7 +67,7 @@ func (mr *SocialProfileRepo) WriteSocialProfile(profile *model.SocialProfile) er
 	savedSocialProfile, err := session.ExecuteWrite(ctx,
 		func(transaction neo4j.ManagedTransaction) (any, error) {
 			result, err := transaction.Run(ctx,
-				"CREATE (p:SocialProfile) SET p.UserID = $userID, p.Username = $username RETURN p.Username + ', from node ' + id(p)",
+				"CREATE (p:SocialProfile) SET p.userId = $userID, p.username = $username RETURN p.username + ', from node ' + id(p)",
 				map[string]any{"userID": profile.UserID, "username": profile.Username})
 			if err != nil {
 				return nil, err
@@ -163,11 +163,17 @@ func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.Soci
 				if ok && followersValue != nil {
 					followersMapList := followersValue.([]interface{})
 					for _, followerMap := range followersMapList {
-						follower := &model.SocialProfile{
-							UserID:   followerMap.(map[string]interface{})["userId"].(int64),
-							Username: followerMap.(map[string]interface{})["username"].(string),
+						if followerMap != nil {
+							userID, userIDOK := followerMap.(map[string]interface{})["userId"].(int64)
+							username, usernameOK := followerMap.(map[string]interface{})["username"].(string)
+							if userIDOK && usernameOK {
+								follower := &model.SocialProfile{
+									UserID:   userID,
+									Username: username,
+								}
+								followers = append(followers, follower)
+							}
 						}
-						followers = append(followers, follower)
 					}
 				}
 
@@ -177,11 +183,17 @@ func (mr *SocialProfileRepo) GetSocialProfileByUserId(userId int64) (*model.Soci
 				if ok && followingValue != nil {
 					followingMapList := followingValue.([]interface{})
 					for _, followingMap := range followingMapList {
-						followingUser := &model.SocialProfile{
-							UserID:   followingMap.(map[string]interface{})["userId"].(int64),
-							Username: followingMap.(map[string]interface{})["username"].(string),
+						if followingMap != nil {
+							userID, userIDOK := followingMap.(map[string]interface{})["userId"].(int64)
+							username, usernameOK := followingMap.(map[string]interface{})["username"].(string)
+							if userIDOK && usernameOK {
+								followingUser := &model.SocialProfile{
+									UserID:   userID,
+									Username: username,
+								}
+								following = append(following, followingUser)
+							}
 						}
-						following = append(following, followingUser)
 					}
 				}
 
