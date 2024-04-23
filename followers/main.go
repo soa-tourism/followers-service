@@ -48,9 +48,12 @@ func main() {
 	router.Use(handler.MiddlewareContentTypeSet)
 
 	//Handle requests
-	postSocialProfileNode := router.Methods(http.MethodPost).Subrouter()
-	postSocialProfileNode.HandleFunc("/profile", handler.CreateSocialProfile)
-	postSocialProfileNode.Use(handler.MiddlewareSocialProfileDeserialization)
+	// postSocialProfileNode := router.Methods(http.MethodPost).Subrouter()
+	// postSocialProfileNode.HandleFunc("/profile", handler.CreateSocialProfile)
+	// postSocialProfileNode.Use(handler.MiddlewareSocialProfileDeserialization)
+
+	putSocialProfileNode := router.Methods(http.MethodPut).Subrouter()
+	putSocialProfileNode.HandleFunc("/profiles/add/{userId}/{username}", handler.CreateSocialProfile)
 
 	getAllSocialProfiles := router.Methods(http.MethodGet).Subrouter()
 	getAllSocialProfiles.HandleFunc("/profiles/{limit}", handler.GetAllSocialProfiles)

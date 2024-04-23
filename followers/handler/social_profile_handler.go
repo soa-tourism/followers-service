@@ -48,9 +48,27 @@ func (m *SocialProfileHandler) GetFollowRecommendations(rw http.ResponseWriter, 
 
 // Social Profile Handler Features
 func (m *SocialProfileHandler) CreateSocialProfile(rw http.ResponseWriter, h *http.Request) {
-	socialProfile := h.Context().Value(KeyProduct{}).(*model.SocialProfile)
-	err := m.repo.WriteSocialProfile(socialProfile)
+	vars := mux.Vars(h)
+	userId, err := strconv.ParseInt(vars["userId"], 10, 64)
 	if err != nil {
+		http.Error(rw, "Invalid userId", http.StatusBadRequest)
+		m.logger.Println("Invalid userId:", err)
+		return
+	}
+
+	username := vars["username"]
+	if err != nil {
+		http.Error(rw, "Invalid followerId", http.StatusBadRequest)
+		m.logger.Println("Invalid followerId:", err)
+		return
+	}
+	profile := model.SocialProfile{
+		UserID:   userId,
+		Username: username,
+	}
+
+	err2 := m.repo.WriteSocialProfile(&profile)
+	if err2 != nil {
 		m.logger.Print("Database exception: ", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
