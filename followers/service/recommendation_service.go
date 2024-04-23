@@ -37,7 +37,9 @@ func (service *RecommendationService) GetRecommendedAccounts(userId int64) model
 				}
 			}
 			if !contains {
-				recommended = append(recommended, profile_following[j])
+				if profile_following[j].UserID != userId {
+					recommended = append(recommended, profile_following[j])
+				}
 			}
 			contains = false
 		}
