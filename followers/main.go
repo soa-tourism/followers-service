@@ -48,10 +48,6 @@ func main() {
 	router.Use(handler.MiddlewareContentTypeSet)
 
 	//Handle requests
-	// postSocialProfileNode := router.Methods(http.MethodPost).Subrouter()
-	// postSocialProfileNode.HandleFunc("/profile", handler.CreateSocialProfile)
-	// postSocialProfileNode.Use(handler.MiddlewareSocialProfileDeserialization)
-
 	putSocialProfileNode := router.Methods(http.MethodPut).Subrouter()
 	putSocialProfileNode.HandleFunc("/profiles/add/{userId}/{username}", handler.CreateSocialProfile)
 
@@ -75,6 +71,9 @@ func main() {
 
 	unfollow := router.Methods(http.MethodDelete).Subrouter()
 	unfollow.HandleFunc("/profiles/unfollow/{userId}/{followerId}", handler.Unfollow)
+
+	search := router.Methods(http.MethodGet).Subrouter()
+	search.HandleFunc("/profiles/search/{username}", handler.SearchSocialProfilesByUsername)
 
 	cors := gorillaHandlers.CORS(gorillaHandlers.AllowedOrigins([]string{"*"}))
 

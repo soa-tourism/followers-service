@@ -376,3 +376,42 @@ func (mr *SocialProfileRepo) Unfollow(userId int64, followerId int64) error {
 
 	return nil
 }
+
+func (mr *SocialProfileRepo) SearchSocialProfilesByUsername(searchedUsername string) (model.SocialProfiles, error) {
+	ctx := context.Background()
+	session := mr.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: "neo4j"})
+	defer session.Close(ctx)
+
+	// ExecuteRead for read transactions (Read and queries)
+	searchResults, err := session.ExecuteRead(ctx,
+		func(transaction neo4j.ManagedTransaction) (any, error) {
+			result, err := transaction.Run(ctx,
+				`MATCH (profile:SocialProfile)
+                WHERE TOLOWER(profile.username) CONTAINS TOLOWER($searchedUsername)
+                RETURN profile.userId as userId, profile.username as username`,
+				map[string]any{"searchedUsername": searchedUsername})
+			if err != nil {
+				return nil, err
+			}
+
+			var profiles model.SocialProfiles
+			for result.Next(ctx) {
+				record := result.Record()
+				userID, ok := record.Get("userId")
+				if !ok || userID == nil {
+					userID = 0
+				}
+				username, _ := record.Get("username")
+				profiles = append(profiles, &model.SocialProfile{
+					UserID:   userID.(int64),
+					Username: username.(string),
+				})
+			}
+			return profiles, nil
+		})
+	if err != nil {
+		mr.logger.Println("Error searching social profiles:", err)
+		return nil, err
+	}
+	return searchResults.(model.SocialProfiles), nil
+}

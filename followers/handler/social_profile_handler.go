@@ -250,6 +250,25 @@ func (m *SocialProfileHandler) Unfollow(rw http.ResponseWriter, h *http.Request)
 	rw.WriteHeader(http.StatusOK)
 }
 
+func (m *SocialProfileHandler) SearchSocialProfilesByUsername(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	searchedUsername := vars["username"]
+
+	profiles, err := m.repo.SearchSocialProfilesByUsername(searchedUsername)
+	if err != nil {
+		m.logger.Print("Database exception: ", err)
+		http.Error(rw, "Error searching social profiles", http.StatusInternalServerError)
+		return
+	}
+
+	err = profiles.ToJSON(rw)
+	if err != nil {
+		http.Error(rw, "Unable to convert to json", http.StatusInternalServerError)
+		m.logger.Fatal("Unable to convert to json :", err)
+		return
+	}
+}
+
 func (m *SocialProfileHandler) MiddlewareSocialProfileDeserialization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, h *http.Request) {
 		profile := &model.SocialProfile{}
