@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+option go_package = "proto/follower";
+
+service SocialProfile {
+    rpc GetSocialProfile(UserId) returns (SocialProfileResponse) {}
+    rpc GetFollowers (UserId) returns (SocialProfilesResponse) {}
+    rpc GetFollowing (UserId) returns (SocialProfilesResponse) {}
+    rpc GetRecommended (UserId) returns (SocialProfilesResponse) {}
+    rpc Follow (FollowRequest) returns (SocialProfilesResponse) {}
+    rpc Unfollow (UnfollowRequest) returns (SocialProfilesResponse) {}
+    rpc Search (Username) returns (SocialProfilesResponse) {}
+    rpc CreateSocialProfile (SocialProfileRequest) returns (SocialProfileResponse){}
+}
+
+message FollowRequest{
+    int64 userId = 1;
+    int64 followerId = 2;
+}
+message UnfollowRequest{
+    int64 followedId = 1;
+    int64 userId = 2;
+}
+message Username{
+    string username = 1;
+}
+message UserId{
+    int64 userId = 1;
+}
+message SocialProfilesResponse{
+    repeated SocialProfileResponse socialProfiles = 1;
+}
+message SocialProfileRequest{
+    int64 userId = 1;
+    string username = 2;
+}
+message SocialProfileResponse{
+    int64 userId = 1;
+    string username = 2;
+    repeated SocialProfileResponse followers = 3;
+    repeated SocialProfileResponse following = 4;
+}
