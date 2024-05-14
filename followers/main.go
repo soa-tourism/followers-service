@@ -132,8 +132,8 @@ func (s Server) Follow(ctx context.Context, request *follower.FollowRequest) (*f
 func (s Server) Unfollow(ctx context.Context, request *follower.UnfollowRequest) (*follower.SocialProfilesResponse, error) {
 	err := s.repo.Unfollow(request.UserId, request.FollowedId)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "social profile not found")
 		fmt.Println("EJ")
+		return nil, status.Error(codes.NotFound, "social profile not found")
 	}
 	fmt.Println("JO")
 	var responses []*follower.SocialProfileResponse
