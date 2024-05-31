@@ -1,9 +1,9 @@
 FROM golang:alpine as build_container
 WORKDIR /app
-COPY go.mod .
-COPY go.sum .
+COPY followers/go.mod .
+COPY followers/go.sum .
 RUN go mod download
-COPY . .
+COPY followers/ .
 RUN go build -o followers
 
 FROM alpine

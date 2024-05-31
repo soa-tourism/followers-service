@@ -3,23 +3,50 @@ package main
 import (
 	//"followers/model"
 	"context"
-	"fmt"
 	"followers/model"
 	"followers/proto/follower"
 	"followers/repo"
 	"followers/service"
-	"log"
 	"net"
-	"os"
 	"time"
+
+	"fmt"
+	"log"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
+
+	//"net/http"
+	"os"
+
+	//"github.com/gin-gonic/gin"
+	// "github.com/zsais/go-gin-prometheus"
+	// "go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.opentelemetry.io/otel"
+	//"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
+	//"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
+	log.SetOutput(os.Stderr)
+
+	// OpenTelemetry
+	var err error
+	tp, err = initTracer()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := tp.Shutdown(context.Background()); err != nil {
+			log.Printf("Error shutting down tracer provider: %v", err)
+		}
+	}()
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
 	lis, err := net.Listen("tcp", "0.0.0.0:8082")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -51,6 +78,8 @@ type Server struct {
 }
 
 func (s Server) GetSocialProfile(ctx context.Context, request *follower.UserId) (*follower.SocialProfileResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "get-social-profile")
+	defer func() { span.End() }()
 	p, ok := s.repo.GetSocialProfileByUserId(request.UserId)
 	if ok != nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -62,6 +91,8 @@ func (s Server) GetSocialProfile(ctx context.Context, request *follower.UserId) 
 	return response, nil
 }
 func (s Server) GetFollowers(ctx context.Context, request *follower.UserId) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "get-followers")
+	defer func() { span.End() }()
 	profiles, err := s.repo.GetAllFollowers(request.UserId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -81,6 +112,8 @@ func (s Server) GetFollowers(ctx context.Context, request *follower.UserId) (*fo
 	return socialProfilesResponse, nil
 }
 func (s Server) GetFollowing(ctx context.Context, request *follower.UserId) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "get-following")
+	defer func() { span.End() }()
 	profiles, err := s.repo.GetAllFollowing(request.UserId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -100,6 +133,8 @@ func (s Server) GetFollowing(ctx context.Context, request *follower.UserId) (*fo
 	return socialProfilesResponse, nil
 }
 func (s Server) GetRecommended(ctx context.Context, request *follower.UserId) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "get-recommended")
+	defer func() { span.End() }()
 	profiles := s.recommendationService.GetRecommendedAccounts(request.UserId)
 	if profiles == nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -119,6 +154,8 @@ func (s Server) GetRecommended(ctx context.Context, request *follower.UserId) (*
 	return socialProfilesResponse, nil
 }
 func (s Server) Follow(ctx context.Context, request *follower.FollowRequest) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "follow")
+	defer func() { span.End() }()
 	err := s.repo.Follow(request.UserId, request.FollowerId)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -130,6 +167,8 @@ func (s Server) Follow(ctx context.Context, request *follower.FollowRequest) (*f
 	return socialProfilesResponse, nil
 }
 func (s Server) Unfollow(ctx context.Context, request *follower.UnfollowRequest) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "unfollow")
+	defer func() { span.End() }()
 	err := s.repo.Unfollow(request.UserId, request.FollowedId)
 	if err != nil {
 		fmt.Println("EJ")
@@ -143,6 +182,8 @@ func (s Server) Unfollow(ctx context.Context, request *follower.UnfollowRequest)
 	return socialProfilesResponse, nil
 }
 func (s Server) Search(ctx context.Context, request *follower.Username) (*follower.SocialProfilesResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "search")
+	defer func() { span.End() }()
 	profiles, err := s.repo.SearchSocialProfilesByUsername(request.Username)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "social profile not found")
@@ -161,6 +202,8 @@ func (s Server) Search(ctx context.Context, request *follower.Username) (*follow
 	return socialProfilesResponse, nil
 }
 func (s Server) CreateSocialProfile(ctx context.Context, request *follower.SocialProfileRequest) (*follower.SocialProfileResponse, error) {
+	_, span := tp.Tracer("followers").Start(ctx, "create-social-profile")
+	defer func() { span.End() }()
 	profile := &model.SocialProfile{
 		UserID:   request.UserId,
 		Username: request.Username,
